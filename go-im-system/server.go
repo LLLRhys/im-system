@@ -17,15 +17,15 @@ func NewServer(ip string, port int) *Server {
 	return server
 }
 
-func (this *Server) Handler(conn net.Conn) {
+func (s *Server) Handler(conn net.Conn) {
 	//...当前业务的链接
 	fmt.Println("链接建立成功")
 }
 
 //启动服务器的接口
-func (this *Server) Start() {
+func (s *Server) Start() {
 	//socket listen
-	listener, err := net.Listen("tcp",fmt.Sprintf("%s:%d", this.IP, this.Port))
+	listener, err := net.Listen("tcp",fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {
 		fmt.Println("net.Listen error:", err)
 		return
@@ -42,6 +42,6 @@ func (this *Server) Start() {
 		}
 
 		// do handler
-		go this.Handler(conn)
+		go s.Handler(conn)
 	}
 }
