@@ -35,13 +35,13 @@ func (s *Server) Start() {
 
 	for {
 		//accept
-		conn, err := listener.Accept()
+		conn, err := listener.Accept()  //不断阻塞接收，直到有客户端连接。接受后返回客户端对象conn。conn可以理解为一个客户端的连接实例。
 		if err != nil {
 			fmt.Println("Listener.Accept error:", err)
 			continue
 		}
 
 		// do handler
-		go s.Handler(conn)
+		go s.Handler(conn)  //客户端对象重新开一个线程。
 	}
 }
