@@ -47,14 +47,28 @@ func (u *User) Offline() {
 	u.Server.BroadCast(u, "已下线")
 }
 
+func (u *User) SendMes(mes string) {
+	u.Conn.Write([]byte(mes))
+}
+
 func (u *User) DoMessage(mes string) {
-	u.Server.BroadCast(u, mes)
+	if mes == "who" {
+		u.Server.Maplock.Lock()
+		for _, user := range u.Server.OnlineMap {
+			onlineMes := "[" + user.Addr + "]" + user.Name + "在线...\n"
+			u.SendMes(onlineMes)
+		}
+		u.Server.Maplock.Unlock()
+	} else {
+		u.Server.BroadCast(u, mes)
+	}
+
 }
 
 func (u *User) ListenMessage() {
 	for {
-		mesg := <-u.Ch //一直接收消息，或阻塞
+		mes := <-u.Ch //一直接收消息，或阻塞
 
-		u.Conn.Write([]byte(mesg + "\n")) //写到客户端
+		u.Conn.Write([]byte(mes + "\n")) //写到客户端
 	}
 }
