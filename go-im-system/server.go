@@ -98,7 +98,7 @@ func (s *Server) Handler(conn net.Conn) {
 			//当前用户活跃，重置定时器
 			//不做任何事，就是为了重新触发下面的定时器
 
-		case <-time.After(time.Second * 30):
+		case <-time.After(time.Second * 180):
 			//已经超时  将当前User强制关闭
 			user.SendMes("超时，您被强制下线了\n")
 

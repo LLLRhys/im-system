@@ -82,6 +82,26 @@ func (u *User) DoMessage(mes string) {
 			u.SendMes("用户名修改成功：" + u.Name + "\n")
 		}
 
+	} else if len(mes) > 5 && mes[:3] == "to|" {
+		//私聊格式：to|张三|你好啊
+		remoteName := strings.Split(mes, "|")[1]
+		remoteUser, ok := u.Server.OnlineMap[remoteName]
+
+		if !ok {
+			//用户名不存在
+			u.SendMes("当前用户名不存在\n")
+			return
+		}
+
+		remoteMes := strings.Split(mes, "|")[2]
+		if remoteMes == "" {
+			u.SendMes("无消息内容，清重发\n")
+			return
+		}
+
+		//把消息私法给remoteUser
+		remoteUser.SendMes(u.Name + "向您说：" + remoteMes + "\n")
+
 	} else {
 		u.Server.BroadCast(u, mes)
 	}
