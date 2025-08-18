@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -36,6 +38,20 @@ func NewClient(serverIp string, serverPort int) *Client {
 	return client
 }
 
+func (c *Client) DealResponse() {
+	// 永久阻塞监听。不断的读取conn，有数据就copy到stdout标准输出上。
+	io.Copy(os.Stdout, c.Conn)
+
+	/*  上下等效
+	for {
+		buf := make()
+		c.Conn.Read(buf)
+		fmt.Println(buf)
+
+	}
+	*/
+}
+
 func (c *Client) menu() bool {
 	var flag int
 
@@ -55,6 +71,87 @@ func (c *Client) menu() bool {
 	}
 }
 
+func (c *Client) PubilcChat() {
+	var mes string
+	fmt.Println(">>>>>>请输入消息内容,exit退出")
+	fmt.Scanln(&mes)
+
+	for mes != "exit" {
+		//消息不为空就发送
+		if len(mes) != 0 {
+			sendMes := mes + "\n"
+			_, err := c.Conn.Write([]byte(sendMes))
+			if err != nil {
+				fmt.Println("conn.Write err :", err)
+				break
+			}
+		}
+
+		//完成初始化，准备第二次发消息
+		mes = ""
+		fmt.Println(">>>>>>请输入消息内容,exit退出")
+		fmt.Scanln(&mes)
+	}
+}
+
+func (c *Client) SelectUser() {
+	mes := "who\n"
+	_, err := c.Conn.Write([]byte(mes))
+	if err != nil {
+		fmt.Println("conn.Write err:", err)
+		return
+	}
+}
+
+func (c *Client) PrivateChat() {
+	var remoteName string
+	var mes string
+
+	c.SelectUser()
+	fmt.Println(">>>>>>请输入聊天对象|用户名|，exit退出")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		fmt.Println(">>>>>>请输入消息内容，exit退出")
+		fmt.Scanln(&mes)
+
+		for mes != "exit" {
+			//消息不为空就发送
+			if mes != "" {
+				sendMes := "to|" + remoteName + "|" + mes + "\n"
+				_, err := c.Conn.Write([]byte(sendMes))
+				if err != nil {
+					fmt.Println("conn.Write err:", err)
+				}
+			}
+
+			mes = ""
+			fmt.Println(">>>>>>请输入消息内容，exit退出")
+			fmt.Scanln(&mes)
+		}
+
+		remoteName = ""
+		fmt.Println(">>>>>>请输入聊天对象|用户名|，exit退出")
+		fmt.Scanln(&remoteName)
+	}
+}
+
+func (c *Client) UpdateName() bool {
+	fmt.Println(">>>>>>请输入新的用户名：")
+	fmt.Scanln(&c.Name)
+
+	//在server.go中的handler()中，对消息的处理会去掉最后一位，即换行符。所以这里要手动加上换行符
+	sendMes := "rename|" + c.Name + "\n"
+
+	_, err := c.Conn.Write([]byte(sendMes))
+	if err != nil {
+		fmt.Println("conn.Write err:", err)
+		return false
+	}
+
+	return true
+}
+
 func (c *Client) run() {
 	for c.flag != 0 {
 		for c.menu() != true {
@@ -65,15 +162,13 @@ func (c *Client) run() {
 		switch c.flag {
 		case 1:
 			//公聊模式
-			fmt.Println("选择了公聊模式")
-
+			c.PubilcChat()
 		case 2:
 			//私聊模式
-			fmt.Println("选择了私聊模式")
-
+			c.PrivateChat()
 		case 3:
 			//更新用户名
-			fmt.Println("选择了更新用户名")
+			c.UpdateName()
 		}
 
 	}
@@ -99,6 +194,9 @@ func main() {
 	}
 
 	fmt.Println("连接服务器成功......")
+
+	//新开一个goroutine去处理server的回复消息
+	go client.DealResponse()
 
 	//启动客户端业务
 	client.run()
