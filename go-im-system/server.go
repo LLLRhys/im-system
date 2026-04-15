@@ -46,7 +46,9 @@ func (s *Server) LisenMessage() {
 		//向用户发送信息
 		s.Maplock.Lock()
 		for _, user := range s.OnlineMap {
-			user.Ch <- mes //会阻塞 要单独开个gorutine
+			go func(u *User) {
+				u.Ch <- mes
+			}(user)
 		}
 		s.Maplock.Unlock()
 	}

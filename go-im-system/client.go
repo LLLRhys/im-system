@@ -71,6 +71,15 @@ func (c *Client) menu() bool {
 	}
 }
 
+func (c *Client) SelectUser() {
+	mes := "who\n"
+	_, err := c.Conn.Write([]byte(mes))
+	if err != nil {
+		fmt.Println("conn.Write err:", err)
+		return
+	}
+}
+
 func (c *Client) PubilcChat() {
 	var mes string
 	fmt.Println(">>>>>>请输入消息内容,exit退出")
@@ -94,14 +103,6 @@ func (c *Client) PubilcChat() {
 	}
 }
 
-func (c *Client) SelectUser() {
-	mes := "who\n"
-	_, err := c.Conn.Write([]byte(mes))
-	if err != nil {
-		fmt.Println("conn.Write err:", err)
-		return
-	}
-}
 
 func (c *Client) PrivateChat() {
 	var remoteName string
@@ -179,12 +180,13 @@ var serverPort int
 
 // ./client -ip 127.0.0.1 -port 8888
 func init() {
+	// 参数定义
 	flag.StringVar(&serverIp, "Ip", "127.0.0.1", "设置服务器Ip地址（默认是127.0.0.1）")
 	flag.IntVar(&serverPort, "Port", 8888, "设置服务器端口（默认是8888）")
 }
 
 func main() {
-	//命令行解析
+	//命令行解析，读数据 赋值给 serverIp 和 serverPort
 	flag.Parse()
 
 	client := NewClient(serverIp, serverPort)
